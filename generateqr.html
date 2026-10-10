@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<title>สร้าง QR Code พนักงาน</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+  body { font-family: 'Tahoma', sans-serif; max-width: 420px; margin: 30px auto; padding: 20px; background: #f4f6f8; }
+  h1 { font-size: 20px; color: #2c3e50; text-align:center; }
+  .box { background:#fff; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); }
+  label { display:block; margin-top:12px; font-weight:bold; color:#34495e; }
+  input, select { width:100%; padding:8px; margin-top:4px; border:1px solid #ccc; border-radius:6px; box-sizing:border-box; font-size:15px; }
+  button { width:100%; margin-top:15px; padding:10px; background:#27ae60; color:#fff; border:none; border-radius:6px; font-size:15px; cursor:pointer; }
+  button.secondary { background:#2980b9; margin-top:10px; }
+  #qrcode { text-align:center; margin-top:20px; }
+  #empLabel { text-align:center; margin-top:10px; font-weight:bold; color:#2c3e50; font-size:16px; }
+</style>
+</head>
+<body>
+  <h1>สร้าง QR Code พนักงาน</h1>
+  <div class="box">
+    <label>ชื่อภาษาอังกฤษ (เช่น fah, sao)</label>
+    <input type="text" id="empKey" placeholder="fah">
+
+    <label>ตำแหน่ง</label>
+    <select id="empPosition">
+      <option value="serve_am">เสิร์ฟเช้า</option>
+      <option value="serve_pm">เสิร์ฟบ่าย</option>
+      <option value="cook">ผู้ช่วยกุ๊ก</option>
+      <option value="dish">ล้างจาน</option>
+    </select>
+
+    <button onclick="generateQR()">สร้าง QR Code</button>
+    <div id="qrcode"></div>
+    <div id="empLabel"></div>
+    <button class="secondary" onclick="downloadQR()">บันทึกเป็นไฟล์ภาพ (PNG)</button>
+  </div>
+
+<script>
+function generateQR() {
+  const key = document.getElementById('empKey').value.trim().toLowerCase();
+  const sel = document.getElementById('empPosition');
+  if (!key) { alert('กรุณากรอกชื่อภาษาอังกฤษ'); return; }
+  if (!/^[a-z0-9_]+$/.test(key)) { alert('ใช้ได้เฉพาะ a-z, 0-9 และ _ ห้ามเว้นวรรค'); return; }
+
+  // ใน QR มีแต่ตัวอักษรภาษาอังกฤษ เช่น NAME:fah|POS:serve_am
+  const payload = "NAME:" + key + "|POS:" + sel.value;
+
+  const qr = qrcode(0, 'M');
+  qr.addData(payload);
+  qr.make();
+
+  document.getElementById('qrcode').innerHTML = qr.createSvgTag({cellSize: 6, margin: 4});
+  document.getElementById('empLabel').innerText = key + " - " + sel.options[sel.selectedIndex].text;
+}
+
+function downloadQR() {
+  const svg = document.querySelector('#qrcode svg');
+  if (!svg) { alert('กรุณากดสร้าง QR Code ก่อน'); return; }
+  const key = document.getElementById('empKey').value.trim().toLowerCase() || 'employee';
+
+  const svgData = new XMLSerializer().serializeToString(svg);
+  const canvas = document.createElement('canvas');
+  canvas.width = 300;
+  canvas.height = 330;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  const img = new Image();
+  img.onload = function() {
+    ctx.drawImage(img, 30, 10, 240, 240);
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 16px Tahoma';
+    ctx.textAlign = 'center';
+    ctx.fillText(document.getElementById('empLabel').innerText, 150, 290);
+    const link = document.createElement('a');
+    link.download = key + '_QR.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  };
+  img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+}
+</script>
+</body>
+</html>
